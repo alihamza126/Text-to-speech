@@ -3,26 +3,22 @@ const app = express();
 const path = require('path');
 const gtts = require('node-gtts')('en');
 const fs = require('fs');
+const serverless=require('serverless-http');
+const port=process.env.PORT||3030;
 
 
 app.use(express.static("public"));
-
 app.set('view engine', 'ejs')
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.json()); //for json request
 app.use(express.urlencoded({ extended: true }))
-app.use(express.static('/cloudclusters/demo',{index:"index.html"}));
 
+const router=express.Router();
 
-app.listen(3000,()=>{
-    console.log("port on 3000")
-});
-
-app.get('/', (req, res) => {
+router.get('/', (req, res) => {
     res.render('index.ejs');
 })
-
-app.get('/speech', (req, res) => {
+router.get('/speech', (req, res) => {
     let voice = Date.now();
     let filepath = path.join(__dirname, `/public/${voice}.wav`);
     voice = `/${voice}.wav`;
@@ -34,12 +30,10 @@ app.get('/speech', (req, res) => {
         if (err) {
             console.log(err)
         } else {
+            console.log("Successfully deleted the file.")
         }
-})})     
-
-app.get('*',(req,res)=>{
-    res.send("page not found");
-    setTimeout(() => {
-        res.redirect('/')
-    }, 3000);
+    })
 })
+
+app.use('/.netlify/functions/api',router)
+module.export.handler=serverless(app);
